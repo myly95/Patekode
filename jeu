@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Jeu Cuisine Haïtienne - Comptoir avec Fours & Élèves</title>
+<style>
+  body {
+    font-family: 'Comic Sans MS', cursive;
+    background-color: #fff4e1;
+    text-align: center;
+    padding: 20px;
+  }
+  h1 {
+    color: #a0522d;
+  }
+  .students {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    overflow: hidden;
+    width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 50px;
+    position: relative;
+  }
+  .student {
+    font-size: 30px;
+    flex-shrink: 0;
+    transition: transform 0.5s ease;
+  }
+  .counter {
+    background: #f4e2d8;
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+  }
+  .dish, .oven {
+    width: 140px;
+    height: 130px;
+    background-color: #ffd89c;
+    border: 3px solid #b76e32;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 0 6px #999;
+    position: relative;
+  }
+  .dish span, .oven span {
+    font-size: 40px;
+  }
+  .button {
+    padding: 8px 15px;
+    background: #ffa94d;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .money {
+    margin-top: 20px;
+    font-size: 20px;
+    color: green;
+  }
+  .level {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #7a4f24;
+  }
+  .progress-bar {
+    width: 100%;
+    background-color: #dcd3be;
+    border-radius: 10px;
+    height: 15px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background-color: #ffa94d;
+    width: 0%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+  }
+  .locked {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<h1>Comptoir Pâté Kodé </h1>
+
+<div class="students" id="studentQueue">
+  <!-- Élèves ici -->
+</div>
+
+<div class="counter">
+  <div class="dish">
+    <span>🥟</span><br>Pâté Kodé
+    <br>Stock: <span id="stock">0</span>
+    <button class="button" onclick="servePatty()">Servir (5 HTG)</button>
+  </div>
+
+  <div class="oven" id="oven1">
+    <span>🔥</span><br>Four 1
+    <br><span id="ovenStatus1">Vide</span>
+    <button class="button" onclick="bakePatty(1)">Cuire</button>
+  </div>
+
+  <div class="oven" id="oven2">
+    <span>🔥</span><br>Four 2
+    <br><span id="ovenStatus2">Vide</span>
+    <button class="button" onclick="bakePatty(2)">Cuire</button>
+  </div>
+
+  <div class="oven locked" id="oven3">
+    <span>🔒</span><br>Four 3<br>Prix: 50 HTG
+    <button class="button" onclick="buyOven()" id="buyOvenBtn">Acheter</button>
+  </div>
+</div>
+
+<div class="money">Gourdes : <span id="money">0</span> HTG</div>
+<div class="level">Niveau : <span id="level">1</span></div>
+<div class="progress-bar">
+  <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<script>
+  // Variables jeu
+  let stock = 0;
+  let money = 0;
+  let level = 1;
+  let xp = 0;
+  let xpToNextLevel = 10;
+  let ovens = {
+    1: false,
+    2: false,
+    3: true  // true = locked, false = unlocked
+  };
+  let bakingOvens = {
+    1: false,
+    2: false,
+    3: false
+  };
+  // File élèves
+  let students = ["👦","👧","👦","👧","👦","👧","👦","👧"];
+  let studentQueue = document.getElementById("studentQueue");
+
+  // Affiche la file
+  function renderStudents() {
+    studentQueue.innerHTML = "";
+    for(let i=0; i<students.length; i++) {
+      let span = document.createElement("span");
+      span.className = "student";
+      span.textContent = students[i];
+      span.style.transform = `translateX(${i*40}px)`; 
+      studentQueue.appendChild(span);
+    }
+  }
+  
+  // Fait avancer la file (animation)
+  function advanceQueue() {
+    students.push(students.shift()); // rotate array
+    renderStudents();
+  }
+
+  // Met à jour l'affichage
+  function updateDisplay() {
+    document.getElementById("stock").textContent = stock;
+    document.getElementById("money").textContent = money;
+    document.getElementById("level").textContent = level;
+    let progressPercent = Math.min(100, (xp / xpToNextLevel) * 100);
+    document.getElementById("progressFill").style.width = progressPercent + "%";
+  }
+
+  // Servir un pâté
+  function servePatty() {
+    if(stock > 0) {
+      stock--;
+      money += 5;
+      xp++;
+      //alert("🥟 Pâté servi ! +5 HTG");
+      advanceQueue();
+      checkLevelUp();
+    } else {
+      //alert("Plus de pâtés en stock !");
+    }
+    updateDisplay();
+  }
+
+  // Vérifie si niveau supérieur
+  function checkLevelUp() {
+    if(xp >= xpToNextLevel) {
+      level++;
+      xp = xp - xpToNextLevel;
+      xpToNextLevel = Math.floor(xpToNextLevel * 1.5);
+      alert("🎉 Niveau supérieur ! Niveau " + level);
+      updateDisplay();
+    }
+  }
+
+  // Cuire un pâté dans un four
+  function bakePatty(num) {
+    if(ovens[num]) {
+      //alert("Le four " + num + " est verrouillé. Achète-le d'abord !");
+      return;
+    }
+    if(bakingOvens[num]) {
+      //alert("Le four " + num + " est déjà en train de cuire !");
+      return;
+    }
+    bakingOvens[num] = true;
+    document.getElementById("ovenStatus"+num).textContent = "Cuisson...";
+    setTimeout(() => {
+      stock++;
+      bakingOvens[num] = false;
+      document.getElementById("ovenStatus"+num).textContent = "Vide";
+      //alert("🥟 Pâté cuit dans le Four " + num + " !");
+      updateDisplay();
+    }, 3000);
+  }
+
+  // Acheter un nouveau four
+  function buyOven() {
+    if(money >= 50 && ovens[3]) {
+      money -= 50;
+      ovens[3] = false; // déverrouiller four 3
+      document.getElementById("oven3").classList.remove("locked");
+      document.getElementById("ovenStatus3")?.remove();
+      document.getElementById("oven3").innerHTML = '<span>🔥</span><br>Four 3<br><span id="ovenStatus3">Vide</span><button class="button" onclick="bakePatty(3)">Cuire</button>';
+      updateDisplay();
+      alert("Four 3 acheté !");
+    } else if (!ovens[3]) {
+      alert("Four 3 déjà acheté !");
+    } else {
+      alert("Pas assez d'argent pour acheter le four !");
+    }
+  }
+
+  // Initialisation
+  renderStudents();
+  updateDisplay();
+</script>
+
+</body>
+</html>
